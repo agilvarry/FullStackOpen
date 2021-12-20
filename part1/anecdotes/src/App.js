@@ -48,7 +48,6 @@ const App = () => {
     }
     
   }
-
   return (
     <div>
       <Header head={"Anecdote of the day"}/>
