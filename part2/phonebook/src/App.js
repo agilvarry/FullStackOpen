@@ -18,7 +18,6 @@ const PersonForm = (props) => {
 };
 
 const Persons = ({ persons, removePerson }) => {
-  console.log(persons)
   return persons.map((person) => (
     <div key={person.name}>
       {person.name} : {person.number}{" "}
@@ -29,12 +28,30 @@ const Persons = ({ persons, removePerson }) => {
   ));
 };
 
+const Notification = ({message}) => {
+  const noteStyle = {
+    color: 'green',
+    fontStyle: 'italic',
+    fontSize: 16
+
+  }
+
+
+  if (message === null){
+    return null
+  }
+  return(
+    <div style={noteStyle}>
+      {message}
+    </div>
+  )
+}
+
 const App = ({ numbers }) => {
   const [persons, setPersons] = useState(numbers);
   const [newName, setNewName] = useState("new person...");
   const [newNum, setNewNum] = useState("555-555-5555");
-
- 
+  const [mess, setMess] = useState(null);
   const alreadyAdded = (name, num) => {
     for (const i in persons) {
       if (persons[i].name === name || persons[i].number === num) {
@@ -44,11 +61,14 @@ const App = ({ numbers }) => {
     return false;
   };
 
+
+
   const addPerson = (event) => {
     const person = { name: newName, number: newNum };
     event.preventDefault();
     if (newName.length > 0 && !alreadyAdded(newName, newNum)) {
       numberHelp.create(person).then((response) => {
+        setMess(`added ${person.name}`)
         setPersons(persons.concat(person));
         setNewNum("");
         setNewName("");
@@ -56,6 +76,9 @@ const App = ({ numbers }) => {
     } else {
       alert("type something else!!!");
     }
+    window.setTimeout(()=>{
+    setMess(null);
+    }, 3000)
   };
 
   const removePerson = (id) => {
@@ -78,6 +101,7 @@ const App = ({ numbers }) => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={mess}/>
       <PersonForm
         addPerson={addPerson}
         newName={newName}
