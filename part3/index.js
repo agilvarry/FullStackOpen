@@ -1,38 +1,85 @@
+require('dotenv').config()
 const express = require('express')
+const cors = require('cors')
+const morgan = require('morgan')
+const Number = require('./models/number')
+
 const app = express()
 app.use(express.json())
+app.use(morgan('tiny'));
+app.use(express.static('build'))
+app.use(cors());
 
-let notes = [{ id: 1, content: "HTML is easy", date: "2019-05-30T17:30:31.098Z", important: true }, { id: 2, content: "Browser can execute only Javascript", date: "2019-05-30T18:39:34.091Z", important: false }, { id: 3, content: "GET and POST are the most important methods of HTTP protocol", date: "2019-05-30T19:20:14.298Z", important: true }]
-app.get('/', (request, response) => {
-    response.send('<h1>Hello World!</h1>')
+app.get('/info', (request, response) => {
+  response.send(`Phonebook has info for ${persons.length} people\b \n ${Date.now()}`);
+});
+
+app.get('/api/persons', (request, response) => {
+  Number.find({}).then(persons => {
+    response.json(persons);
+    // mongoose.connection.close()
+  })
+});
+
+app.get('/api/persons/:id', (request, response, next) => {
+  Number.findById(request.params.id)
+    .then(note => {
+      if (note) {
+        response.json(note)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
-app.get('/api/notes', (request, response) => {
-    response.json(notes)
+app.delete('/api/persons/:id', (request, response) => {
+  Number.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
+});
+
+const generateId = () => {
+  return Math.floor(Math.random() * 10000000)
+}
+
+app.post('/api/persons', (request, response,next) => {
+  const body = request.body
+  if (!body.name || !body.number) {
+    return response.status(400).json({
+      error: 'content missing'
+    });
+  }
+
+  const number = new Number({
+    name: body.name,
+    number: body.number,
+    date: new Date(),
+  })
+
+  number.save().then(savedNum => {
+    response.json(savedNum)
+  }).catch(error => next(error));
 })
 
-app.get('/api/notes/:id', (request, response) => {
-    const id = Number(request.params.id)
-    console.log(id)
-    const note = notes.find(note => note.id === id)
-    console.log(note)
-    response.json(note)
-})
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
 
-app.delete('/api/notes/:id', (request, response) => {
-    const id = Number(request.params.id)
-    notes = notes.filter(note => note.id !== id)
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({
+      error: error.message
+    })
+  }
 
-    response.status(204).end()
-})
+  next(error)
+}
+app.use(errorHandler)
 
-app.post('/api/notes', (request, response) => {
-    const note = request.body
-    console.log(note)
-    response.json(note)
-})
-
-const PORT = 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-})
+  console.log(`Server running on port ${PORT}`);
+});
