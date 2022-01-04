@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
-const mongoUrl = 'mongodb+srv://fullstack:fullstack@cluster0.kpnti.mongodb.net/blog?retryWrites=true&w=majority'
+require('dotenv').config();
+const mongoUrl = process.env.MONGODB_URI
 mongoose.connect(mongoUrl)
 
 const blogSchema = new mongoose.Schema({
